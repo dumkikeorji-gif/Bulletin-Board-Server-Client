@@ -67,7 +67,7 @@ public class Bulletin extends JFrame {
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "Could not connect to server.");
-            
+            System.exit(ABORT);
         }
 
         // ===============================
@@ -117,7 +117,7 @@ public class Bulletin extends JFrame {
 
     //sending the pin command to the server when the pin button is pressed and showing a dialog to get the ID of the note to be pinned and sending the command to the server
     private void pinButtonPressed() {
-        String id = JOptionPane.showInputDialog(this, "Enter ID of note to pin:");
+        String id = JOptionPane.showInputDialog(this, "Enter coords of note to pin:");
         if (id != null && !id.isEmpty()) {
             client.sendCommand("PIN " + id);
         }
@@ -125,7 +125,7 @@ public class Bulletin extends JFrame {
 
     //sending the unpin command to the server when the unpin button is pressed and showing a dialog to get the ID of the note to be unpinned and sending the command to the server
     private void unpinButtonPressed() {
-        String id = JOptionPane.showInputDialog(this, "Enter ID of note to unpin:");
+        String id = JOptionPane.showInputDialog(this, "Enter coords of note to unpin:");
         if (id != null && !id.isEmpty()) {
             client.sendCommand("UNPIN " + id);
         }
