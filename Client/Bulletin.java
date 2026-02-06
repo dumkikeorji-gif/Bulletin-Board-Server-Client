@@ -6,7 +6,7 @@ public class Bulletin extends JFrame {
     private BulletinClient client; // networking client
     private JTextArea serverInfoArea;// area to display server messages
 
-    public Bulletin() {
+    public Bulletin(String ip, int port) {
         setTitle("Pinboard GUI");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(700, 600);
@@ -18,26 +18,29 @@ public class Bulletin extends JFrame {
         // TOP INPUT PANEL
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 
+        // Container to hold the command disconnect
+        JPanel bottomContainer = new JPanel(new BorderLayout());
+
         JLabel label = new JLabel("Enter command here:");
         JTextField commandInput = new JTextField(15);
         JButton clear = new JButton("CLEAR");
         JButton shake = new JButton("SHAKE");
         JButton pin = new JButton("PIN");
         JButton unpin = new JButton("UNPIN");
-        JButton getNote = new JButton("GETNOTE");
+        JButton get = new JButton("GET");
         topPanel.add(label);
         topPanel.add(commandInput);
         topPanel.add(clear);
         topPanel.add(shake);
         topPanel.add(pin);
         topPanel.add(unpin);
-        topPanel.add(getNote);
+        topPanel.add(get);
 
         clear.addActionListener(e -> clearButtonPressed());
         shake.addActionListener(e -> shakeButtonPressed());
         pin.addActionListener(e -> pinButtonPressed());
         unpin.addActionListener(e -> unpinButtonPressed());
-        getNote.addActionListener(e -> getNoteButtonPressed());
+        get.addActionListener(e -> getNoteButtonPressed());
 
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.add(topPanel, BorderLayout.NORTH);
@@ -55,7 +58,7 @@ public class Bulletin extends JFrame {
         //SERVER CONNECTION 
         try {
             // Create client socket connection
-            client = new BulletinClient("localhost", 4554);
+            client = new BulletinClient(ip, port);
 
             // Start listening for server responses
             client.listen(msg -> {
@@ -91,11 +94,24 @@ public class Bulletin extends JFrame {
         serverInfoArea.setPreferredSize(new Dimension(500,500));
 
         JScrollPane scrollPane = new JScrollPane(serverInfoArea);
-        scrollPane.setPreferredSize(new Dimension(500, 500));
+        scrollPane.setPreferredSize(new Dimension(500, 450));
 
-        mainPanel.add(scrollPane, BorderLayout.SOUTH);
+        bottomContainer.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton disconnect = new JButton("DISCONNECT");
+        disconnect.addActionListener(e -> disconnectButtonPressed());
+        buttonPanel.add(disconnect);
+
+        bottomContainer.add(buttonPanel, BorderLayout.SOUTH);
+
+
+        mainPanel.add(bottomContainer, BorderLayout.SOUTH);
     }
 
+    //============================================================================
+    // Method to handle messages from the server and display them in the text area
+    //============================================================================
     //Handles messages from the server and uses the text area to display it
     private void handleServerMessage(String msg, JPanel board) {
         serverInfoArea.append(msg + "\n");
@@ -131,21 +147,75 @@ public class Bulletin extends JFrame {
         }
     }   
 
+    private void disconnectButtonPressed() {
+        if (client != null) {
+        client.sendCommand("DISCONNECT");
+    }
+    
+    // Close the current board window
+    this.dispose();
+    
+    // Re-open the connection screen
+    SwingUtilities.invokeLater(() -> new ConnectionGUI());
+    }
+
     //sending the getnote command to the server when the getnote button is pressed and showing a dialog to get the ID of the note to be retrieved and sending the command to the server
     private void getNoteButtonPressed() {   
-        String id = JOptionPane.showInputDialog(this, "Enter ID of note to get:");
-        String pinned = JOptionPane.showInputDialog(this, "Is the note pinned? (yes/no):");
-        if (pinned != null && pinned.equalsIgnoreCase("yes")) {
-            client.sendCommand("GETNOTE " + id + " PINNED");
-        } else {
-            client.sendCommand("GETNOTE " + id);
+        JPanel dialog = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        dialog.setSize(500, 500);
+        
+        JLabel new_x = new JLabel("Get notes at X coordinate:");
+        JTextField newXInput = new JTextField(5);
+        JLabel new_y = new JLabel("Get notes at Y coordinate:");
+        JTextField newYInput = new JTextField(5);
+        JLabel color = new JLabel("Get notes of color:");
+        JTextField getColor = new JTextField(5);
+        JLabel hasWord = new JLabel("Get notes with word:");
+        JTextField getHasWord = new JTextField(5);
+
+
+        JButton getpins = new JButton("GET PINS");
+        dialog.add(getpins);
+        dialog.add(new_x);
+        dialog.add(newXInput);
+        dialog.add(new_y);
+        dialog.add(newYInput);
+        dialog.add(color);
+        dialog.add(getColor);
+        dialog.add(hasWord);
+        dialog.add(getHasWord);
+        //Pane being used to show the dialog for the shake button and getting the new coordinates and ID of the note to be shaken and sending the command to the server
+        int result = JOptionPane.showConfirmDialog(this, dialog, 
+            "Get/Filter Notes", JOptionPane.OK_CANCEL_OPTION);
+
+        if (result == JOptionPane.OK_OPTION) {
+        StringBuilder command = new StringBuilder("GET");
+
+        // 1. Handle Color Filter
+        String colorVal = getColor.getText().trim();
+        if (!colorVal.isEmpty()) {
+            command.append(" color=").append(colorVal.toLowerCase());
         }
-        if (id != null && !id.isEmpty()) {
-            client.sendCommand("GETNOTE " + id);
+
+        // 2. Handle Contains (X and Y)
+        String xVal = newXInput.getText().trim();
+        String yVal = newYInput.getText().trim();
+        if (!xVal.isEmpty() && !yVal.isEmpty()) {
+            command.append(" contains=").append(xVal).append(" ").append(yVal);
         }
+
+        // 3. Handle RefersTo
+        String wordVal = getHasWord.getText().trim();
+        if (!wordVal.isEmpty()) {
+            command.append(" refersTo=").append(wordVal);
+        }
+
+        // Send the final constructed string (e.g., "GET color=blue refersTo=hello")
+        client.sendCommand(command.toString());
+    }
     }
         
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(Bulletin::new);
+        SwingUtilities.invokeLater(() -> new ConnectionGUI());
     }
 }
