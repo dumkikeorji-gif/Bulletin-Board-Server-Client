@@ -30,7 +30,7 @@ public class BBoard {
 
             colors = new String[args.length - 5];
             for (int i = 5; i < args.length; i++) {
-                colors[i - 5] = args[i];
+                colors[i - 5] = args[i].toLowerCase();
             }
 
         } catch (NumberFormatException e) {
