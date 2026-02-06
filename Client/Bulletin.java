@@ -36,6 +36,8 @@ public class Bulletin extends JFrame {
         topPanel.add(unpin);
         topPanel.add(get);
 
+        
+
         clear.addActionListener(e -> clearButtonPressed());
         shake.addActionListener(e -> shakeButtonPressed());
         pin.addActionListener(e -> pinButtonPressed());
@@ -161,58 +163,57 @@ public class Bulletin extends JFrame {
 
     //sending the getnote command to the server when the getnote button is pressed and showing a dialog to get the ID of the note to be retrieved and sending the command to the server
     private void getNoteButtonPressed() {   
-        JPanel dialog = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        dialog.setSize(500, 500);
-        
-        JLabel new_x = new JLabel("Get notes at X coordinate:");
+        JPanel dialog = new JPanel(new GridLayout(0, 2, 5, 5));
+
         JTextField newXInput = new JTextField(5);
-        JLabel new_y = new JLabel("Get notes at Y coordinate:");
-        JTextField newYInput = new JTextField(5);
-        JLabel color = new JLabel("Get notes of color:");
+            JTextField newYInput = new JTextField(5);
         JTextField getColor = new JTextField(5);
-        JLabel hasWord = new JLabel("Get notes with word:");
         JTextField getHasWord = new JTextField(5);
 
-
-        JButton getpins = new JButton("GET PINS");
-        dialog.add(getpins);
-        dialog.add(new_x);
-        dialog.add(newXInput);
-        dialog.add(new_y);
-        dialog.add(newYInput);
-        dialog.add(color);
+        // Filter Fields
+        dialog.add(new JLabel("Color:"));
         dialog.add(getColor);
-        dialog.add(hasWord);
+        dialog.add(new JLabel("Contains X:"));
+        dialog.add(newXInput);
+        dialog.add(new JLabel("Contains Y:"));
+        dialog.add(newYInput);
+        dialog.add(new JLabel("Refers To:"));
         dialog.add(getHasWord);
-        //Pane being used to show the dialog for the shake button and getting the new coordinates and ID of the note to be shaken and sending the command to the server
+
+        // The Special Shortcut Button
+        JButton getpins = new JButton("Get All Pinned Coords");
+        dialog.add(new JLabel("Shortcuts:"));
+        dialog.add(getpins);
+
+        // Logic for the shortcut button inside the dialog
+        getpins.addActionListener(e -> {
+            client.sendCommand("GET PINS");
+            // This trick finds the popup window and closes it automatically
+            Window w = SwingUtilities.getWindowAncestor(getpins);
+            if (w != null) w.dispose();
+        });
+
         int result = JOptionPane.showConfirmDialog(this, dialog, 
             "Get/Filter Notes", JOptionPane.OK_CANCEL_OPTION);
 
+        // This handles the "OK" button for filtered notes
         if (result == JOptionPane.OK_OPTION) {
-        StringBuilder command = new StringBuilder("GET");
+            StringBuilder command = new StringBuilder("GET");
 
-        // 1. Handle Color Filter
-        String colorVal = getColor.getText().trim();
-        if (!colorVal.isEmpty()) {
-            command.append(" color=").append(colorVal.toLowerCase());
+            String colorVal = getColor.getText().trim();
+            if (!colorVal.isEmpty()) command.append(" color=").append(colorVal.toLowerCase());
+
+            String xVal = newXInput.getText().trim();
+            String yVal = newYInput.getText().trim();
+            if (!xVal.isEmpty() && !yVal.isEmpty()) {
+                command.append(" contains=").append(xVal).append(" ").append(yVal);
+            }
+
+            String wordVal = getHasWord.getText().trim();
+            if (!wordVal.isEmpty()) command.append(" refersTo=").append(wordVal);
+
+            client.sendCommand(command.toString());
         }
-
-        // 2. Handle Contains (X and Y)
-        String xVal = newXInput.getText().trim();
-        String yVal = newYInput.getText().trim();
-        if (!xVal.isEmpty() && !yVal.isEmpty()) {
-            command.append(" contains=").append(xVal).append(" ").append(yVal);
-        }
-
-        // 3. Handle RefersTo
-        String wordVal = getHasWord.getText().trim();
-        if (!wordVal.isEmpty()) {
-            command.append(" refersTo=").append(wordVal);
-        }
-
-        // Send the final constructed string (e.g., "GET color=blue refersTo=hello")
-        client.sendCommand(command.toString());
-    }
     }
         
     public static void main(String[] args) {
