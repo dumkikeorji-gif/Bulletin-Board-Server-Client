@@ -17,6 +17,7 @@ class ConnectionGUI extends JFrame {
         JTextField ipField = new JTextField("localhost", 10);
         JTextField portField = new JTextField("4554", 10);
         JButton connectBtn = new JButton("OK");
+        JButton quitBtn = new JButton("Quit");
 
         gbc.gridx = 0; gbc.gridy = 0;
         add(new JLabel("IP:"), gbc);
@@ -28,8 +29,12 @@ class ConnectionGUI extends JFrame {
         gbc.gridx = 1;
         add(portField, gbc);
 
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        btnPanel.add(connectBtn);
+        btnPanel.add(quitBtn);
+
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
-        add(connectBtn, gbc);
+        add(btnPanel, gbc);
 
         connectBtn.addActionListener(e -> {
             String ip = ipField.getText();
@@ -40,6 +45,7 @@ class ConnectionGUI extends JFrame {
             this.dispose(); // Close the connection prompt
         });
 
+        quitBtn.addActionListener(e -> System.exit(0));
         setVisible(true);
     }
 }
