@@ -16,7 +16,7 @@ public class SharedBboard {
     // Represents a single note on the board
     public static class Note {
         public final int x, y;        // top-left corner of the note
-        public final String color;    // note color
+        public final String color;    // note color (stored lowercase)
         public final String message;  // note message text
 
         public Note(int x, int y, String color, String message) {
@@ -56,6 +56,8 @@ public class SharedBboard {
 
     private final int boardW, boardH;
     private final int noteW, noteH;
+
+    // All valid colors stored in lowercase
     private final Set<String> validColors;
 
     private final List<Note> notes = new ArrayList<>();
@@ -68,8 +70,11 @@ public class SharedBboard {
         this.noteW = noteW;
         this.noteH = noteH;
 
+        // Normalize all valid colors to lowercase
         this.validColors = new HashSet<>();
-        for (String c : colors) validColors.add(c);
+        for (String c : colors) {
+            validColors.add(c.toLowerCase());
+        }
     }
 
     /* =========================
@@ -83,7 +88,7 @@ public class SharedBboard {
                y + noteH <= boardH;
     }
 
-    // Check if color is supported
+    // Check if color is supported (expects lowercase)
     private boolean isColorValid(String c) {
         return validColors.contains(c);
     }
@@ -124,6 +129,9 @@ public class SharedBboard {
 
     // POST x y color message
     public synchronized String post(int x, int y, String color, String message) {
+
+        // Normalize color to lowercase so BLUE/Blue/blue all work
+        color = color.toLowerCase();
 
         if (!fitsOnBoard(x, y))
             return "ERROR OUT_OF_BOUNDS Note exceeds board boundaries";

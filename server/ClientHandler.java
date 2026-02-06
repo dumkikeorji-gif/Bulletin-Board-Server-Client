@@ -65,8 +65,8 @@ public class ClientHandler extends Thread {
               .append(noteW).append(" ")
               .append(noteH);
 
-            // Add all valid colors to the handshake
-            for (String c : colors) sb.append(" ").append(c);
+            // Add all valid colors to the handshake (normalize to lowercase)
+            for (String c : colors) sb.append(" ").append(c.toLowerCase());
 
             // Send handshake to client
             out.println(sb.toString());
@@ -111,7 +111,9 @@ public class ClientHandler extends Thread {
         // Example: "POST 10 10 red hello world"
         // cmd = POST, rest = "10 10 red hello world"
         String[] firstSplit = line.split("\\s+", 2);
-        String command = firstSplit[0];
+
+        // Normalize command to uppercase so user can type post/POST/Post
+        String command = firstSplit[0].toUpperCase();
 
         switch (command) {
 
@@ -176,7 +178,8 @@ public class ClientHandler extends Thread {
         }
 
         // Color is 4th token
-        String color = parts[3];
+        // ✅ Normalize to lowercase so BLUE/Blue/blue all work
+        String color = parts[3].toLowerCase();
 
         // Message is everything after that
         String message = parts[4];
@@ -250,7 +253,7 @@ public class ClientHandler extends Thread {
         String[] parts = line.split("\\s+");
 
         // Case 1: GET PINS
-        if (parts.length == 2 && parts[1].equals("PINS")) {
+        if (parts.length == 2 && parts[1].equalsIgnoreCase("PINS")) {
 
             // Get a snapshot copy of pins (safe copy)
             List<SharedBboard.Pin> pins = board.getPinsSnapshot();
@@ -280,7 +283,8 @@ public class ClientHandler extends Thread {
 
             // color=<something>
             if (t.startsWith("color=")) {
-                colorFilter = t.substring("color=".length());
+                // ✅ normalize to lowercase so color=BLUE works
+                colorFilter = t.substring("color=".length()).toLowerCase();
 
             // contains=<x> <y>  (two tokens: contains= and y)
             } else if (t.startsWith("contains=")) {
@@ -314,7 +318,7 @@ public class ClientHandler extends Thread {
                 }
 
                 refersTo = r.toString();
-                break; // refersTo consumes the rest of line
+                break; // refersTo consumes the rest of the line
 
             } else {
                 // Unknown filter format
@@ -342,7 +346,7 @@ public class ClientHandler extends Thread {
 
     // Helper: SHAKE/CLEAR should have no extra tokens
     private String handleNoArg(String line, String name, String okResponse) {
-        if (!line.equals(name)) {
+        if (!line.equalsIgnoreCase(name)) {
             return "ERROR INVALID_FORMAT " + name + " takes no arguments";
         }
         return okResponse;
